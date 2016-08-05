@@ -11,6 +11,6 @@ public class BusinessCardParserFactory {
      * @return a new BusinessCardParser
      */
     public static BusinessCardParser newInstance() {
-        throw new UnsupportedOperationException("Not implemented");
+        return new OCRBusinessCardParser();
     }
 }
