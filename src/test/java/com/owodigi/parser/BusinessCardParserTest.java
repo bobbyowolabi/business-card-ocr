@@ -8,9 +8,6 @@ import java.nio.file.Paths;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- *
- */
 public class BusinessCardParserTest {
 
     @Test
