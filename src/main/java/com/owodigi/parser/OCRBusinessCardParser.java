@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
  * from processed business card images.
  */
 public class OCRBusinessCardParser implements BusinessCardParser {
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("");
-    private static final Pattern PHONE_NUMBER_PATTERN = Pattern.compile("");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("(.+[@].+[.].+)");
+    private static final Pattern PHONE_NUMBER_PATTERN = Pattern.compile("(\\(\\d{3}\\)\\d{3}\\-\\d{4})");
 
     private void deleteLastCharacter(final StringBuilder builder) {
         builder.deleteCharAt(builder.length() - 1);
@@ -83,7 +83,19 @@ public class OCRBusinessCardParser implements BusinessCardParser {
      * null.
      */
     private String extractPhoneNumber(final String value) {
-        return extract(value, PHONE_NUMBER_PATTERN);
+        final String phoneNumber = extract(value, PHONE_NUMBER_PATTERN);
+        if (phoneNumber == null) {
+            return null;
+        } else {
+            final StringBuilder phoneNumberBuilder = new StringBuilder();
+            for (int i = 0; i < phoneNumber.length(); ++i) {
+                final char character = phoneNumber.charAt(i);
+                if (Character.isDigit(character)) {
+                    phoneNumberBuilder.append(character);
+                }
+            }
+            return phoneNumberBuilder.toString();
+        }
     }
     
     @Override
