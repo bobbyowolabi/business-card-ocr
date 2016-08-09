@@ -21,7 +21,6 @@ public class BusinessCardParserTest {
         Assert.assertEquals("Email", "msmith@asymmetrik.com", info.getEmailAddress());
     }
 
-    @Ignore
     @Test
     public void testExample2() throws IOException {
         final String document = new String(Files.readAllBytes(Paths.get("src/test/resources/example2.txt")), StandardCharsets.UTF_8);
@@ -32,7 +31,6 @@ public class BusinessCardParserTest {
         Assert.assertEquals("Email", "lisa.haung@foobartech.com", info.getEmailAddress());
     }
 
-    @Ignore
     @Test
     public void testExample3() throws IOException {
         final String document = new String(Files.readAllBytes(Paths.get("src/test/resources/example3.txt")), StandardCharsets.UTF_8);
