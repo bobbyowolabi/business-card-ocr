@@ -18,10 +18,15 @@ import java.util.regex.Pattern;
 public class OCRBusinessCardParser implements BusinessCardParser {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("(.+[@].+[.].+)");
     private static final Pattern PHONE_NUMBER_PATTERN = Pattern.compile(".*(\\(*\\d{3}.*\\d{3}.*\\d{4})");
-    private static final Set<String> PHONE_SYNONYMS = new HashSet<String>() {{
+    private static final Set<String> PHONE_HEADERS = new HashSet<String>() {{
         Collections.addAll(this, "Phone", "phone", "Telephone", "telephone");
     }};
 
+    /**
+     * Removes the last character of the given StringBuilder.
+     * 
+     * @param builder StringBuilder whose last character is to be removed
+     */
     private void deleteLastCharacter(final StringBuilder builder) {
         builder.deleteCharAt(builder.length() - 1);
     }
@@ -42,7 +47,13 @@ public class OCRBusinessCardParser implements BusinessCardParser {
         return matcher.matches() ? matcher.group(1) : null;
     }
 
-    private String extractCharactersAndWhitespace(final String value) {
+    /**
+     * Returns the letter and whitespace characters found in the given String.
+     * 
+     * @param value value to extract letters and whitespace from.
+     * @return letter and whitespace characters found in the given String
+     */
+    private String extractLettersAndWhitespace(final String value) {
         final StringBuilder characters = new StringBuilder();
         for (int i = 0; i < value.length(); ++i) {
             final char character = value.charAt(i);
@@ -53,6 +64,12 @@ public class OCRBusinessCardParser implements BusinessCardParser {
         return characters.toString();
     }
     
+    /**
+     * Returns all of the digit characters found in the given value in order.
+     * 
+     * @param value value to extract digits from
+     * @return all of the digit characters found in the given value
+     */
     private String extractDigits(final String value) {
         final StringBuilder digits = new StringBuilder();
         for (int i = 0; i < value.length(); ++i) {
@@ -83,6 +100,9 @@ public class OCRBusinessCardParser implements BusinessCardParser {
      * @return a name if one exists in the given value; otherwise, null.
      */
     private String extractName(final String value) {
+        if (value.isEmpty()) {
+            return null;
+        }
         final Sentence sentence = new Sentence(value);
         final Iterator<String> wordIterator = sentence.words().iterator();
         final Iterator<String> nerTagIterator = sentence.nerTags().iterator();
@@ -92,7 +112,11 @@ public class OCRBusinessCardParser implements BusinessCardParser {
             final String nerTags = nerTagIterator.next();
             if (nerTags.equals("PERSON")) {
                 nameBuilder.append(word).append(" ");
+                break;
             }
+        }
+        while (wordIterator.hasNext() && nerTagIterator.next().equals("PERSON")) {
+            nameBuilder.append(wordIterator.next()).append(" ");
         }
         if (nameBuilder.length() > 0) {
             deleteLastCharacter(nameBuilder);
@@ -105,6 +129,8 @@ public class OCRBusinessCardParser implements BusinessCardParser {
     /**
      * Parses the given value and extracts and returns a phone number if one
      * exists; otherwise, returns null.
+     * 
+     * Only the digits of the phone number will be returned.
      *
      * @param value value to extract phone number from
      * @return returns a phone number if one exists in the given value; otherwise,
@@ -115,14 +141,14 @@ public class OCRBusinessCardParser implements BusinessCardParser {
         if (phoneNumber == null) {
             return null;
         }
-        String headings = value.replace(phoneNumber, "");
-        headings = extractCharactersAndWhitespace(headings);
-        if (headings.isEmpty()) {
+        String headers = value.replace(phoneNumber, "");
+        headers = extractLettersAndWhitespace(headers);
+        if (headers.isEmpty()) {
             return extractDigits(value);
         }
-        for (String heading : headings.split("\\s+")) {
-            heading = extractCharactersAndWhitespace(heading);
-            for (final String phoneSynonym : PHONE_SYNONYMS) {
+        for (String heading : headers.split("\\s+")) {
+            heading = extractLettersAndWhitespace(heading);
+            for (final String phoneSynonym : PHONE_HEADERS) {
                 if (heading.isEmpty() == false && phoneSynonym.contains(heading)) {
                     return extractDigits(value);
                 }
@@ -133,10 +159,11 @@ public class OCRBusinessCardParser implements BusinessCardParser {
 
     @Override
     public ContactInfo getContactInfo(final String document) {
-        String value;
         final StandardContactInfo contactInfo = new StandardContactInfo();
+        contactInfo.setName(extractName(document));
+        String value;
         for (final String line : document.split("\\v+")) {
-            if ((value = extractName(line)) != null) {
+            if ((contactInfo.getName() == null) && (value = extractName(line)) != null) {
                 contactInfo.setName(value);
             } else if ((value = extractPhoneNumber(line)) != null) {
                 contactInfo.setPhoneNumber(value);
