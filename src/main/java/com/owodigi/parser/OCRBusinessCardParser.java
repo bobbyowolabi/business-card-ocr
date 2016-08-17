@@ -28,7 +28,9 @@ public class OCRBusinessCardParser implements BusinessCardParser {
      * @param builder StringBuilder whose last character is to be removed
      */
     private void deleteLastCharacter(final StringBuilder builder) {
-        builder.deleteCharAt(builder.length() - 1);
+        if (builder.length() > 0) {
+            builder.deleteCharAt(builder.length() - 1);
+        }
     }
 
     /**
@@ -108,22 +110,16 @@ public class OCRBusinessCardParser implements BusinessCardParser {
         final Iterator<String> nerTagIterator = sentence.nerTags().iterator();
         final StringBuilder nameBuilder = new StringBuilder();
         while (wordIterator.hasNext()) {
-            final String word = wordIterator.next();
-            final String nerTags = nerTagIterator.next();
-            if (nerTags.equals("PERSON")) {
-                nameBuilder.append(word).append(" ");
+            if (nerTagIterator.next().equals("PERSON")) {
+                do {
+                    nameBuilder.append(wordIterator.next()).append(" ");
+                } while (wordIterator.hasNext() && nerTagIterator.next().equals("PERSON"));
                 break;
             }
+            wordIterator.next();
         }
-        while (wordIterator.hasNext() && nerTagIterator.next().equals("PERSON")) {
-            nameBuilder.append(wordIterator.next()).append(" ");
-        }
-        if (nameBuilder.length() > 0) {
-            deleteLastCharacter(nameBuilder);
-            return nameBuilder.toString();
-        } else {
-            return null;
-        }
+        deleteLastCharacter(nameBuilder);
+        return nameBuilder.length() > 0 ? nameBuilder.toString() : null;
     }
 
     /**
